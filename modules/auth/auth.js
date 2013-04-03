@@ -5,8 +5,7 @@
  */
 angular.module('ui.auth', ['ui.config'])
 
-  .provider('uiAuth', ['ui.config', function(uiConfig) {
-    uiConfig.auth = uiConfig.auth || {};
+  .provider('uiAuth', function() {
     /**
      * Holds all the requests which failed due to 401 response,
      * so they can be re-requested in future, once login is completed.
@@ -22,7 +21,7 @@ angular.module('ui.auth', ['ui.config'])
         config: config,
         deferred: deferred
       });
-    }
+    };
 
     this.$get = ['$rootScope','$injector', function($rootScope, $injector) {
       var $http; //initialized later because of circular dependency problem
@@ -40,15 +39,12 @@ angular.module('ui.auth', ['ui.config'])
       }
 
       return {
-        authenticated: function(resetBuffer) {
+        authenticated: function() {
           $rootScope.$broadcast('ui:authenticated');
-          if (resetBuffer === undefined && uiConfig.auth.resetBuffer)
-            buffer = [];
-          else
-            retryAll();
+          retryAll();
         }
-      }
-    }]
+      };
+    }];
   })
 
   /**
@@ -65,9 +61,9 @@ angular.module('ui.auth', ['ui.config'])
       function error(response) {
         if (response.status === 401) {
           var deferred = $q.defer();
-          authProvider.pushToBuffer(response.config, deferred);
+          uiAuthProvider.pushToBuffer(response.config, deferred);
           $rootScope.$broadcast('ui:unauthenticated');
-          return deferred.promise;
+          //return deferred.promise;
         }
         // otherwise
         return $q.reject(response);
@@ -75,7 +71,7 @@ angular.module('ui.auth', ['ui.config'])
 
       return function(promise) {
         return promise.then(success, error);
-      }
+      };
 
     }];
     $httpProvider.responseInterceptors.push(interceptor);
